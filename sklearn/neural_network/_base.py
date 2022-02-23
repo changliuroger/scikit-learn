@@ -151,7 +151,7 @@ DERIVATIVES = {'identity': inplace_identity_derivative,
                'relu': inplace_relu_derivative}
 
 
-def squared_loss(y_true, y_pred, sample_weight):
+def squared_loss(y_true, y_pred, sample_weight=None):
     """Compute the squared loss for regression.
 
     Parameters
@@ -170,11 +170,12 @@ def squared_loss(y_true, y_pred, sample_weight):
         The degree to which the samples are correctly predicted.
     """
     loss = ((y_true - y_pred) ** 2).sum(axis=-1)
-
+    if sample_weight is None:
+        sample_weight = np.ones(y_true.shape[0])
     return (loss * sample_weight).mean() / 2
 
 
-def log_loss(y_true, y_prob, sample_weight):
+def log_loss(y_true, y_prob, sample_weight=None):
     """Compute Logistic loss for classification.
 
     Parameters
@@ -203,10 +204,13 @@ def log_loss(y_true, y_prob, sample_weight):
 
     loss = -(xlogy(y_true, y_prob)).sum(axis=-1)
 
+    if sample_weight is None:
+        sample_weight = np.ones(y_true.shape[0])
+
     return (loss * sample_weight).sum() / y_prob.shape[0]
 
 
-def binary_log_loss(y_true, y_prob, sample_weight):
+def binary_log_loss(y_true, y_prob, sample_weight=None):
     """Compute binary logistic loss for classification.
 
     This is identical to log_loss in binary classification case,
@@ -232,7 +236,8 @@ def binary_log_loss(y_true, y_prob, sample_weight):
     y_prob = np.clip(y_prob, eps, 1 - eps)
     loss = -(xlogy(y_true, y_prob) +
              xlogy(1 - y_true, 1 - y_prob)).sum(axis=-1)
-
+    if sample_weight is None:
+        sample_weight = np.ones(y_true.shape[0])
     return (loss * sample_weight).sum() / y_prob.shape[0]
 
 
