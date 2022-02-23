@@ -370,8 +370,6 @@ class BaseMultilayerPerceptron(BaseEstimator, metaclass=ABCMeta):
 
         X, y = self._validate_input(X, y, incremental, reset=first_pass)
 
-        n_samples, n_features = X.shape
-
         # Ensure y is 2D
         if y.ndim == 1:
             y = y.reshape((-1, 1))
@@ -381,6 +379,11 @@ class BaseMultilayerPerceptron(BaseEstimator, metaclass=ABCMeta):
         if isinstance(self, MLPClassifier) and self.class_weight is not None:
             sample_weight = (sample_weight *
                              compute_sample_weight(self.class_weight, y))
+        
+        # remove zero weight samples
+        mask = sample_weight > 0
+        X, y, sample_weight = X[mask], y[mask], sample_weight[mask]
+        n_samples, n_features = X.shape
 
         self.n_outputs_ = y.shape[1]
 
