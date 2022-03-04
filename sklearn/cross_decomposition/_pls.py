@@ -340,7 +340,7 @@ class _PLS(
             if self.deflation_mode == "regression":
                 # regress Yk on x_score
                 y_loadings = np.dot(x_scores, Yk) / np.dot(x_scores, x_scores)
-                Yk -= np.outer(x_scores, y_loadings)
+                Yk -= np.outer(y_scores, y_loadings)
 
             self.x_weights_[:, k] = x_weights
             self.y_weights_[:, k] = y_weights
