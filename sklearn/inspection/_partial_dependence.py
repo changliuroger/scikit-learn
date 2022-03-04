@@ -483,12 +483,12 @@ def partial_dependence(
     )
 
     if kind == "average":
-        return Bunch(average=averaged_predictions, values=values)
+        return Bunch(average=averaged_predictions, _values=values)
     elif kind == "individual":
-        return Bunch(individual=predictions, values=values)
+        return Bunch(individual=predictions, _values=values)
     else:  # kind='both'
         return Bunch(
             average=averaged_predictions,
             individual=predictions,
-            values=values,
+            _values=values,
         )
