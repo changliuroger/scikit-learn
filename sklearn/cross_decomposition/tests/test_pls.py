@@ -623,3 +623,25 @@ def test_pls_feature_names_out(Klass):
         dtype=object,
     )
     assert_array_equal(names_out, expected_names_out)
+
+# Test issue22420 Fix  
+def test_Y_trans_equal_y_scores():
+    X = [[0., 0., 1.], [1.,0.,0.], [2.,2.,2.], [2.,5.,4.]]
+    Y = [[0.1, -0.2], [0.9, 1.1], [6.2, 5.9], [11.9, 12.3]]
+    pls2 = PLSRegression(n_components=2)
+    X_trans, Y_trans = pls2.fit_transform(X, Y)
+    assert_array_almost_equal(Y_trans, pls2.y_scores_)
+
+def test_Y_trans_equal_y_scores_zero():
+    X = [[0., 0., 0.], [0.,0.,0.], [0.,0.,0.], [0.,0.,0.]]
+    Y = [[0, 0], [0, 0], [0, 0], [0, 0]]
+    pls2 = PLSRegression(n_components=2)
+    X_trans, Y_trans = pls2.fit_transform(X, Y)
+    assert_array_almost_equal(Y_trans, pls2.y_scores_)
+    
+def test_Y_trans_equal_y_scores_overload():
+    X = [[9999999999999, 9999999999999, 9999999999999.], [9999999999999.,9999999999999.,9999999999999.], [9999999999999.,9999999999999.,9999999999999.], [9999999999999.,9999999999999.,9999999999999.]]
+    Y = [[9999999999999, 9999999999999], [9999999999999, 9999999999999], [9999999999999, 9999999999999], [9999999999999, 9999999999999]]
+    pls2 = PLSRegression(n_components=2)
+    X_trans, Y_trans = pls2.fit_transform(X, Y)
+    assert_array_almost_equal(Y_trans, pls2.y_scores_)
