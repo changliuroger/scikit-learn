@@ -794,33 +794,22 @@ class BaseMultilayerPerceptron(BaseEstimator, metaclass=ABCMeta):
                 % self.solver
             )
         return True
-
+    
     @available_if(_check_solver)
-    def partial_fit(self, X, y):
+    def partial_fit(self, X, y, sample_weight=None):
         """Update the model with a single iteration over the given data.
-
         Parameters
         ----------
         X : {array-like, sparse matrix} of shape (n_samples, n_features)
             The input data.
-
         y : ndarray of shape (n_samples,)
             The target values.
-
         Returns
         -------
         self : object
             Trained MLP model.
         """
-        if self.solver not in _STOCHASTIC_SOLVERS:
-            raise AttributeError("partial_fit is only available for stochastic"
-                                 " optimizers. %s is not stochastic."
-                                 % self.solver)
-        return self._partial_fit
-
-    def _partial_fit(self, X, y, sample_weight=None):
         return self._fit(X, y, incremental=True, sample_weight=sample_weight)
-
 
 class MLPClassifier(ClassifierMixin, BaseMultilayerPerceptron):
     """Multi-layer Perceptron classifier.
@@ -1216,7 +1205,7 @@ class MLPClassifier(ClassifierMixin, BaseMultilayerPerceptron):
         return self._label_binarizer.inverse_transform(y_pred)
 
     @available_if(lambda est: est._check_solver())
-    def partial_fit(self, X, y, classes=None):
+    def partial_fit(self, X, y, classes=None, sample_weight=None):
         """Update the model with a single iteration over the given data.
 
         Parameters
@@ -1243,14 +1232,6 @@ class MLPClassifier(ClassifierMixin, BaseMultilayerPerceptron):
         self : object
             Trained MLP model.
         """
-        if self.solver not in _STOCHASTIC_SOLVERS:
-            raise AttributeError("partial_fit is only available for stochastic"
-                                 " optimizer. %s is not stochastic"
-                                 % self.solver)
-        return self._partial_fit
-
-    def _partial_fit(self, X, y, classes=None,
-                     sample_weight=None):
         if _check_partial_fit_first_call(self, classes):
             self._label_binarizer = LabelBinarizer()
             if type_of_target(y).startswith("multilabel"):
@@ -1258,9 +1239,7 @@ class MLPClassifier(ClassifierMixin, BaseMultilayerPerceptron):
             else:
                 self._label_binarizer.fit(classes)
 
-        super()._partial_fit(X, y,
-                             sample_weight=sample_weight)
-
+        super().partial_fit(X, y,sample_weight)
         return self
 
     def predict_log_proba(self, X):
