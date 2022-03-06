@@ -1010,7 +1010,7 @@ def test_zero_sample_weights():
     y1 = np.array([1, 1, 2, 2, 1, 1, 2, 2], dtype=int)
     X2 = np.array(
         [
-            [1, 6]
+            [1, 6],
             [1, 3],
             [1, 1],
             [1, 2],
