@@ -618,7 +618,7 @@ class BaseMultilayerPerceptron(BaseEstimator, metaclass=ABCMeta):
             # don't stratify in multilabel classification
             should_stratify = is_classifier(self) and self.n_outputs_ == 1
             stratify = y if should_stratify else None
-            X, X_val, y, y_val = train_test_split(
+            X, X_val, y, y_val,sample_weight, _ = train_test_split(
                 X,
                 y,
                 sample_weight,
