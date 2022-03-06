@@ -915,13 +915,13 @@ def test_mlp_loading_from_joblib_partial_fit(tmp_path):
     # finetuned model learned the new target
     predicted_value = load_estimator.predict(fine_tune_features)
     assert_allclose(predicted_value, fine_tune_target, rtol=1e-4)
-
+    
 @pytest.mark.parametrize("weighted_class",
                          [i for i in range(3)])
-def test_sample_class_weights(weighted_class):
-    # test sample and class weights:
+def test_class_weights(weighted_class):
+    # test class weights:
     # check that at least threshold % of samples (from chosen class)
-    # have higher score vs. training without sample or class weights
+    # have higher score vs. training without class weights
     #
     # test uses the digits dataset, and chooses parametrically class
     # to apply weights for (classes set to digits 0,1 and 2 though
@@ -943,9 +943,6 @@ def test_sample_class_weights(weighted_class):
     class_weight = [{0: standard_weight} for _ in range(np.max(y)+1)]
     class_weight[weighted_class] = {0: high_weight}
 
-    sample_weight = np.ones((y_train.shape[0])) * standard_weight
-    sample_weight[y_train == weighted_class] = high_weight
-
     test_samples = X_test[y_test == weighted_class]
 
     base_clf = MLPClassifier(random_state=0)
@@ -961,7 +958,32 @@ def test_sample_class_weights(weighted_class):
         (weighted_score > score).sum() / weighted_score.shape[0]
     assert samples_with_greater_score > threshold
 
-    # test sample weight
+@pytest.mark.parametrize("weighted_class",
+                         [i for i in range(3)])
+def test_sample_weight(weighted_class):
+    weighted_class = weighted_class
+    standard_weight = 1.0
+    high_weight = 5.0
+    threshold = 0.15
+    split_size = 0.5
+
+    # data preprocess
+    X, y = load_digits(return_X_y=True)
+    X = X / X.max()
+    X_train, X_test, y_train, y_test = \
+        train_test_split(X, y, train_size=split_size,
+                         random_state=0)
+
+    sample_weight = np.ones((y_train.shape[0])) * standard_weight
+    sample_weight[y_train == weighted_class] = high_weight
+
+    test_samples = X_test[y_test == weighted_class]
+
+    base_clf = MLPClassifier(random_state=0)
+    base_clf.fit(X_train, y_train)
+    score = base_clf.predict_proba(test_samples)[:, weighted_class]
+
+    # test sample weights
     clf = MLPClassifier(random_state=2)
     clf.fit(X_train, y_train, sample_weight=sample_weight)
     weighted_score = clf.predict_proba(test_samples)[:, weighted_class]
@@ -969,4 +991,46 @@ def test_sample_class_weights(weighted_class):
     samples_with_greater_score = \
         (weighted_score > score).sum() / weighted_score.shape[0]
     assert samples_with_greater_score > threshold
-    
+
+def test_zero_sample_weights():
+    # two datasets that are the same after zero weight samples are removed
+    X1 = np.array(
+        [
+            [1, 3],
+            [1, 2],
+            [2, 1],
+            [2, 2],
+            [3, 3],
+            [3, 2],
+            [4, 1],
+            [3, 1],
+        ],
+        dtype=np.float64,
+    )
+    y1 = np.array([1, 1, 2, 2, 1, 1, 2, 2], dtype=int)
+    X2 = np.array(
+        [
+            [1, 6]
+            [1, 3],
+            [1, 1],
+            [1, 2],
+            [2, 1],
+            [2, 2],
+            [3, 4],
+            [3, 3],
+            [3, 2],
+            [1, 2],
+            [4, 1],
+            [3, 1],
+        ],
+        dtype=np.float64,
+    )
+    y2 = np.array([1, 1, 2, 1, 2, 2, 3, 1, 1, 3, 2, 2], dtype=int)
+    sw2 = np.array([0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1], dtype=int)
+    clf1 = MLPClassifier()
+    clf2 = MLPClassifier()
+    clf1.fit(X1,y1)
+    clf2.fit(X2,y2,sample_weight=sw2)
+    pred1 = clf1.predict(X1)
+    pred2 = clf2.predict(X1)
+    assert_allclose(pred1, pred2, rtol=1e-04)
