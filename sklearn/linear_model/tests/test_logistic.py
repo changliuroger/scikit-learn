@@ -2256,3 +2256,42 @@ def test_large_sparse_matrix(solver):
             LogisticRegression(solver=solver).fit(X, y)
     else:
         LogisticRegression(solver=solver).fit(X, y)
+
+# Test issue18074 Fix  
+def test_logistic_regression_base_10():
+    n_features = 1000
+    n_examples = 1500
+
+    np.random.seed(0)
+    x = np.random.random((n_examples, n_features))
+    y = np.random.randint(2, size=n_examples)
+    max_iter=1000
+    solver = 'lbfgs'
+
+    for tol in [1e-2, 1e-3, 1e-4, 1e-5]:
+        np.random.seed(0)
+        lr1 = LogisticRegression(solver=solver, max_iter=max_iter, tol=tol).fit(x, y)
+
+        np.random.seed(0)
+        lr2 = LogisticRegression(solver=solver, max_iter=max_iter, tol=tol).fit(x[::-1], y[::-1])
+
+        self.assertTrue(lr1.n_iter_[0] > lr2.n_iter_[0])
+
+def test_logistic_regression_not_base_10():
+    n_features = 1000
+    n_examples = 1500
+
+    np.random.seed(0)
+    x = np.random.random((n_examples, n_features))
+    y = np.random.randint(2, size=n_examples)
+    max_iter=1000
+    solver = 'lbfgs'
+
+    for tol in [14e-2, 22e-3, 34e-4, 27e-5]:
+        np.random.seed(0)
+        lr1 = LogisticRegression(solver=solver, max_iter=max_iter, tol=tol).fit(x, y)
+
+        np.random.seed(0)
+        lr2 = LogisticRegression(solver=solver, max_iter=max_iter, tol=tol).fit(x[::-1], y[::-1])
+        
+        self.assertTrue(lr1.n_iter_[0] > lr2.n_iter_[0])
