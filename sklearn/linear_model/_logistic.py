@@ -809,7 +809,7 @@ def _logistic_regression_path(
                 method="L-BFGS-B",
                 jac=True,
                 args=(X, target, 1.0 / C, sample_weight),
-                options={"iprint": iprint, "gtol": tol, "ftol":tol*1e-9,"maxiter": max_iter},
+                options={"iprint": iprint, "gtol": tol, "ftol":tol*1e-12,"maxiter": max_iter},
             )
             n_iter_i = _check_optimize_result(
                 solver,
