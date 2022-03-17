@@ -49,6 +49,16 @@ class KNeighborsRegressor(KNeighborsMixin, RegressorMixin, NeighborsBase):
 
         Uniform weights are used by default.
 
+    average_func : {'mean'} or callable
+        functions used to calculate the nearest neighbors' average
+        in the end of predict function, note, weight parameter must
+        be set to 'uniform' if callable is provided here
+
+        - 'mean' will use regular mean
+        - [callable] : a user-defined function which accepts an np array of shape (n,)
+        and returns a np array of shape (1,) containing the average of the n entries
+
+
     algorithm : {'auto', 'ball_tree', 'kd_tree', 'brute'}, default='auto'
         Algorithm used to compute the nearest neighbors:
 
@@ -165,6 +175,7 @@ class KNeighborsRegressor(KNeighborsMixin, RegressorMixin, NeighborsBase):
         metric="minkowski",
         metric_params=None,
         n_jobs=None,
+        average_func='mean'
     ):
         super().__init__(
             n_neighbors=n_neighbors,
@@ -176,6 +187,7 @@ class KNeighborsRegressor(KNeighborsMixin, RegressorMixin, NeighborsBase):
             n_jobs=n_jobs,
         )
         self.weights = weights
+        self.average_func = average_func
 
     def _more_tags(self):
         # For cross-validation routines to split data correctly
@@ -237,7 +249,14 @@ class KNeighborsRegressor(KNeighborsMixin, RegressorMixin, NeighborsBase):
             _y = _y.reshape((-1, 1))
 
         if weights is None:
-            y_pred = np.mean(_y[neigh_ind], axis=1)
+            if self.average_func == 'mean':
+                y_pred = np.mean(_y[neigh_ind], axis=1)
+            else:
+                y_pred = np.empty((_y[neigh_ind].shape[0],), dtype=np.float64)
+                for j in range(_y[neigh_ind].shape[0]):
+                    y_pred[j] = self.average_func(
+                        np.take(_y[neigh_ind], j, axis=0))
+
         else:
             y_pred = np.empty((X.shape[0], _y.shape[1]), dtype=np.float64)
             denom = np.sum(weights, axis=1)
