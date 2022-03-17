@@ -2267,7 +2267,7 @@ def test_logistic_regression_base_10():
     y = np.random.randint(2, size=n_examples)
     max_iter=1000
     solver = 'lbfgs'
-
+    prev = -1
     for tol in [1e-2, 1e-3, 1e-4, 1e-5]:
         np.random.seed(0)
         lr1 = LogisticRegression(solver=solver, max_iter=max_iter, tol=tol).fit(x, y)
@@ -2275,7 +2275,10 @@ def test_logistic_regression_base_10():
         np.random.seed(0)
         lr2 = LogisticRegression(solver=solver, max_iter=max_iter, tol=tol).fit(x[::-1], y[::-1])
 
-        self.assertTrue(lr1.n_iter_[0] > lr2.n_iter_[0])
+        diff = np.abs(lr1.coef_ - lr2.coef_).mean()
+        if prev >=0:
+            assert prev > diff
+        prev = diff
 
 def test_logistic_regression_not_base_10():
     n_features = 1000
@@ -2286,7 +2289,7 @@ def test_logistic_regression_not_base_10():
     y = np.random.randint(2, size=n_examples)
     max_iter=1000
     solver = 'lbfgs'
-
+    prev = -1
     for tol in [14e-2, 22e-3, 34e-4, 27e-5]:
         np.random.seed(0)
         lr1 = LogisticRegression(solver=solver, max_iter=max_iter, tol=tol).fit(x, y)
@@ -2294,4 +2297,7 @@ def test_logistic_regression_not_base_10():
         np.random.seed(0)
         lr2 = LogisticRegression(solver=solver, max_iter=max_iter, tol=tol).fit(x[::-1], y[::-1])
         
-        self.assertTrue(lr1.n_iter_[0] > lr2.n_iter_[0])
+        diff = np.abs(lr1.coef_ - lr2.coef_).mean()
+        if prev >= 0:
+            assert prev > diff
+        prev = diff
