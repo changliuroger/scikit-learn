@@ -1,4 +1,5 @@
 from itertools import product
+from statistics import mean
 
 import pytest
 import re
@@ -1881,3 +1882,147 @@ def test_neighbors_distance_metric_deprecation():
         dist_metric = DistanceMetric.get_metric("euclidean")
 
     assert isinstance(dist_metric, ActualDistanceMetric)
+
+#Test Issue#22626
+def custom_mean_function(l):
+    return sum(l)/len(l)
+
+def test_neighbors_zero_distance_with_custom_mean_function():
+    X = np.array([[1.0, 1.0], [1.0, 1.0], [2.0, 2.0], [2.5, 2.5]])
+    y = np.array([1.0, 1.5, 2.0, 0.0])
+    radius = 0.2
+    z = np.array([[1.1, 1.1], [2.0, 2.0]])
+
+    knn_correct_unif = np.array([1.25, 1.0])
+    knn_correct_dist = np.array([1.25, 2.0])
+
+    for algorithm in ALGORITHMS:
+        for weights, corr_labels in zip(
+            ["uniform", "distance"], [knn_correct_unif, knn_correct_dist]
+        ):
+            knn = neighbors.KNeighborsRegressor(
+                n_neighbors=2, weights=weights, algorithm=algorithm, average_func=custom_mean_function
+            )
+            knn.fit(X, y)
+            assert_array_almost_equal(corr_labels, knn.predict(z))
+
+def test_kneighbors_regressor_with_custom_mean_function(
+    n_samples=40, n_features=5, n_test_pts=10, n_neighbors=3, random_state=0
+):
+    # Test k-neighbors regression
+    rng = np.random.RandomState(random_state)
+    X = 2 * rng.rand(n_samples, n_features) - 1
+    y = np.sqrt((X ** 2).sum(1))
+    y /= y.max()
+
+    y_target = y[:n_test_pts]
+
+    weight_func = _weight_func
+
+    for algorithm in ALGORITHMS:
+        for weights in ["uniform", "distance", weight_func]:
+            knn = neighbors.KNeighborsRegressor(
+                n_neighbors=n_neighbors, weights=weights, algorithm=algorithm, average_func=custom_mean_function
+            )
+            knn.fit(X, y)
+            epsilon = 1e-5 * (2 * rng.rand(1, n_features) - 1)
+            y_pred = knn.predict(X[:n_test_pts] + epsilon)
+            assert np.all(abs(y_pred - y_target) < 0.3)
+
+def test_kneighbors_regressor_multioutput_with_custom_mean_function(
+    n_samples=40, n_features=5, n_test_pts=10, n_neighbors=3, random_state=0
+):
+    # Test k-neighbors in multi-output regression
+    rng = np.random.RandomState(random_state)
+    X = 2 * rng.rand(n_samples, n_features) - 1
+    y = np.sqrt((X ** 2).sum(1))
+    y /= y.max()
+    y = np.vstack([y, y]).T
+
+    y_target = y[:n_test_pts]
+    weights = ["uniform", "distance", _weight_func]
+    for algorithm, weights in product(ALGORITHMS, weights):
+        knn = neighbors.KNeighborsRegressor(
+            n_neighbors=n_neighbors, weights=weights, algorithm=algorithm, average_func=custom_mean_function
+        )
+        knn.fit(X, y)
+        epsilon = 1e-5 * (2 * rng.rand(1, n_features) - 1)
+        y_pred = knn.predict(X[:n_test_pts] + epsilon)
+        assert y_pred.shape == y_target.shape
+        assert np.all(np.abs(y_pred - y_target) < 0.3)
+
+def test_KNeighborsRegressor_multioutput_uniform_weight_with_custom_mean_function():
+    # Test k-neighbors in multi-output regression with uniform weight
+    rng = check_random_state(0)
+    n_features = 5
+    n_samples = 40
+    n_output = 4
+
+    X = rng.rand(n_samples, n_features)
+    y = rng.rand(n_samples, n_output)
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+    for algorithm, weights in product(ALGORITHMS, [None, "uniform"]):
+        knn = neighbors.KNeighborsRegressor(weights=weights, algorithm=algorithm, average_func=custom_mean_function)
+        knn.fit(X_train, y_train)
+
+        neigh_idx = knn.kneighbors(X_test, return_distance=False)
+        y_pred_idx = np.array([np.mean(y_train[idx], axis=0) for idx in neigh_idx])
+
+        y_pred = knn.predict(X_test)
+
+        assert y_pred.shape == y_test.shape
+        assert y_pred_idx.shape == y_test.shape
+        assert_array_almost_equal(y_pred, y_pred_idx)
+
+def test_kneighbors_regressor_sparse_with_custom_mean_function(
+    n_samples=40, n_features=5, n_test_pts=10, n_neighbors=5, random_state=0
+):
+    # Test radius-based regression on sparse matrices
+    # Like the above, but with various types of sparse matrices
+    rng = np.random.RandomState(random_state)
+    X = 2 * rng.rand(n_samples, n_features) - 1
+    y = ((X ** 2).sum(axis=1) < 0.25).astype(int)
+
+    for sparsemat in SPARSE_TYPES:
+        knn = neighbors.KNeighborsRegressor(n_neighbors=n_neighbors, algorithm="auto", average_func=custom_mean_function)
+        knn.fit(sparsemat(X), y)
+
+        knn_pre = neighbors.KNeighborsRegressor(
+            n_neighbors=n_neighbors, metric="precomputed", average_func=custom_mean_function
+        )
+        knn_pre.fit(pairwise_distances(X, metric="euclidean"), y)
+
+        for sparsev in SPARSE_OR_DENSE:
+            X2 = sparsev(X)
+            assert np.mean(knn.predict(X2).round() == y) > 0.95
+
+            X2_pre = sparsev(pairwise_distances(X, metric="euclidean"))
+            if sparsev in {dok_matrix, bsr_matrix}:
+                msg = "not supported due to its handling of explicit zeros"
+                with pytest.raises(TypeError, match=msg):
+                    knn_pre.predict(X2_pre)
+            else:
+                assert np.mean(knn_pre.predict(X2_pre).round() == y) > 0.95
+
+def test_neighbors_iris_with_custom_mean_function():
+    # Sanity checks on the iris dataset
+    # Puts three points of each label in the plane and performs a
+    # nearest neighbor query on points near the decision boundary.
+
+    for algorithm in ALGORITHMS:
+        rgs = neighbors.KNeighborsRegressor(n_neighbors=5, algorithm=algorithm, average_func=custom_mean_function)
+        rgs.fit(iris.data, iris.target)
+        assert np.mean(rgs.predict(iris.data).round() == iris.target) > 0.95
+
+def test_neighbors_with_error_function():
+    X = np.array([[1.0, 1.0], [1.0, 1.0], [2.0, 2.0], [2.5, 2.5]])
+    y = np.array([1.0, 1.5, 2.0, 0.0])
+    radius = 0.2
+    z = np.array([[1.1, 1.1], [2.0, 2.0]])
+
+    with pytest.raises(Exception):
+        knn = neighbors.KNeighborsRegressor(
+            n_neighbors=2, average_func=Error_mean
+        )
+        knn.fit(X, y)
