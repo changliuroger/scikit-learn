@@ -250,10 +250,11 @@ class KNeighborsRegressor(KNeighborsMixin, RegressorMixin, NeighborsBase):
             if self.average_func == 'mean':
                 y_pred = np.mean(_y[neigh_ind], axis=1)
             else:
-                y_pred = np.empty((_y[neigh_ind].shape[0],), dtype=np.float64)
+                y_pred = np.empty((X.shape[0], _y.shape[1]), dtype=np.float64)
                 for j in range(_y[neigh_ind].shape[0]):
-                    y_pred[j] = self.average_func(
+                    z = self.average_func(
                         np.take(_y[neigh_ind], j, axis=0))
+                    y_pred[j] = z
         else:
             y_pred = np.empty((X.shape[0], _y.shape[1]), dtype=np.float64)
             denom = np.sum(weights, axis=1)
