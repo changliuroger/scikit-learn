@@ -1,6 +1,7 @@
-"""K-means clustering."""
+"""Graph Based Clustering.
 
-#graph based clustering code source: https://github.com/dayyass/graph-based-clustering
+source: https://github.com/dayyass/graph-based-clustering
+"""
 
 import warnings
 
@@ -26,11 +27,13 @@ from ..metrics import pairwise_distances
 def _check_matrix(a: np.ndarray) -> bool:
     """Check if np.ndarray is a matrix.
 
-    Args:
-        a (np.ndarray): np.ndarray to check.
+    Parameters
+    ----------
+    a (np.ndarray): np.ndarray to check.
 
-    Returns:
-        bool: np.ndarray is a matrix.
+    Returns
+    ----------
+    bool: np.ndarray is a matrix.
     """
 
     return a.ndim == 2
@@ -38,11 +41,13 @@ def _check_matrix(a: np.ndarray) -> bool:
 def _check_matrix_is_square(a: np.ndarray) -> bool:
     """Check if a matrix is square.
 
-    Args:
-        a (np.ndarray): A matrix to check.
+    Parameters
+    ----------
+    a (np.ndarray): A matrix to check.
 
-    Returns:
-        bool: A matrix is square.
+    Returns
+    ----------
+    bool: A matrix is square.
     """
 
     M, N = a.shape
@@ -52,13 +57,20 @@ def _check_matrix_is_square(a: np.ndarray) -> bool:
 def _check_square_matrix_is_symmetric(a: np.ndarray) -> bool:
     """Check if a square matrix is symmetric.
 
-    Args:
-        a (np.ndarray): A square matrix to check.
-        rtol (float, optional): The relative tolerance parameter. Defaults to 1e-05.
-        atol (float, optional): The absolute tolerance parameter. Defaults to 1e-08.
+    Parameters
+    ----------
+    a : np.ndarray
+        A square matrix to check.
 
-    Returns:
-        bool: A square matrix is symmetric.
+    rtol : float, optional, defaults = 1e-05
+        The relative tolerance parameter.
+
+    atol : float, optional, defaults = 1e-08
+        The absolute tolerance parameter.
+
+    Returns
+    ----------
+    bool: A square matrix is symmetric.
     """
 
     return np.allclose(a, a.T)
@@ -66,11 +78,14 @@ def _check_square_matrix_is_symmetric(a: np.ndarray) -> bool:
 def check_symmetric(a: np.ndarray) -> bool:
     """Check if a matrix is symmetric.
 
-    Args:
-        a (np.ndarray): A matrix to check.
+    Parameters
+    ----------
+    a : np.ndarray
+        A matrix to check.
 
-    Returns:
-        bool: A matrix is symmetric.
+    Returns
+    ----------
+    bool: A matrix is symmetric.
     """
 
     if not _check_matrix(a):
@@ -87,11 +102,13 @@ def check_symmetric(a: np.ndarray) -> bool:
 def _check_binary(a: np.ndarray) -> bool:
     """Check if np.ndarray is binary.
 
-    Args:
-        a (np.ndarray): np.ndarray to check.
+    Parameters
+    ----------
+    a: np.ndarray
 
-    Returns:
-        bool: np.ndarray is binary.
+    Returns
+    ----------
+    bool: np.ndarray is binary.
     """
 
     return ((a == 0) | (a == 1)).all()
@@ -99,11 +116,14 @@ def _check_binary(a: np.ndarray) -> bool:
 def check_adjacency_matrix(a: np.ndarray) -> bool:
     """Check if a matrix is adjacency_matrix.
 
-    Args:
-        a (np.ndarray): A matrix to check.
+    Parameters
+    ----------
+    a : np.ndarray
+        A matrix to check.
 
-    Returns:
-        bool: A matrix is adjacency_matrix.
+    Returns
+    ----------
+    bool: A matrix is adjacency_matrix.
     """
 
     if not check_symmetric(a):
@@ -126,15 +146,23 @@ def _pairwise_distances(
 ) -> np.ndarray:
     """Compute the pairwise distance matrix from a matrix X.
 
-    Args:
-        X (np.ndarray): A matrix.
-        metric (Union[str, Callable], optional): The metric to use when calculating distance between instances in a feature array.
-            If metric is a string, it must be one of the options allowed by scipy.spatial.distance.pdist for its metric parameter,
-            or a metric listed in sklearn pairwise.PAIRWISE_DISTANCE_FUNCTIONS. Defaults to "euclidean".
-        n_jobs (Optional[int], optional): The number of jobs to use for the computation. Defaults to None.
+    Parameters
+    ----------
+    X : np.ndarray
+        A matrix.
 
-    Returns:
-        np.ndarray: The pairwise distance matrix.
+    metric : Union[str, Callable], optional, defaults = "euclidean"
+        The metric to use when calculating distance between instances in a feature array.
+        If metric is a string, it must be one of the options allowed by scipy.spatial.distance.pdist for its metric parameter,
+        or a metric listed in sklearn pairwise.PAIRWISE_DISTANCE_FUNCTIONS.
+    
+    n_jobs : Optional[int], optional, defaults = None
+        The number of jobs to use for the computation
+
+    Returns
+    ----------
+    distances: np.ndarray
+        The pairwise distance matrix.
     """
 
     assert _check_matrix(X)
@@ -149,12 +177,18 @@ def distances_to_adjacency_matrix(
 ) -> np.ndarray:
     """Convert a pairwise distance matrix to adjacency_matrix given threshold.
 
-    Args:
-        distances (np.ndarray): A pairwise distance matrix.
-        threshold (float): Threshold to make graph edges.
+    Parameters
+    ----------
+    distances : np.ndarray
+        A pairwise distance matrix.
+    
+    threshold : float
+        Threshold to make graph edges.
 
-    Returns:
-        np.ndarray: The adjacency_matrix.
+    Returns
+    ----------
+    adjacency_matrix : np.ndarray
+        The adjacency_matrix.
     """
 
     assert check_symmetric(distances)
@@ -171,12 +205,18 @@ def span_tree_top_n_weights_idx(
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Get indices of top n weights in the span tree.
 
-    Args:
-        span_tree (np.ndarray): The span tree.
-        n (int): Top n weights to find.
+    Parameters
+    ----------
+    span_tree : np.ndarray
+        The span tree.
 
-    Returns:
-        Tuple[np.ndarray]: Indices of top n weights in the span tree.
+    n : int
+        Top n weights to find.
+
+    Returns
+    ----------
+    unravel_idx: Tuple[np.ndarray]
+        Indices of top n weights in the span tree.
     """
 
     span_tree_shape = span_tree.shape
@@ -267,7 +307,36 @@ def span_tree_top_n_weights_idx(
 
 class ConnectedComponentsClustering(ClusterMixin, BaseEstimator):
 
-    """Clustering with graph connected components."""
+    """
+    Clustering with graph connected components.
+
+    Parameters
+    ----------
+    threshold : float
+        Threshold to make graph edges.
+
+    metric : Union[str, Callable], optional, defaults = "euclidean"
+        The metric to use when calculating distance between instances in a feature array.
+        If metric is a string, it must be one of the options allowed by scipy.spatial.distance.pdist for its metric parameter,
+        or a metric listed in sklearn pairwise.PAIRWISE_DISTANCE_FUNCTIONS.
+
+    n_jobs : Optional[int], optional, defaults = None
+        The number of jobs to use for the computation. Defaults to None.
+
+    Attributes
+    ----------
+    labels_ : ndarray of shape (n_samples)
+        Cluster labels for each point.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from sklearn.cluster import ConnectedComponentsClustering
+    >>> X = np.array([[0, 1], [1, 0], [1, 1]])
+    >>> clustering = ConnectedComponentsClustering(threshold=0.275, metric="euclidean", n_jobs=-1).fit(X)
+    >>> clustering
+    ConnectedComponentsClustering(threshold=0.275, metric="euclidean", n_jobs=-1)
+    """
 
     def __init__(
         self,
@@ -275,16 +344,6 @@ class ConnectedComponentsClustering(ClusterMixin, BaseEstimator):
         metric: Union[str, Callable] = "euclidean",
         n_jobs: Optional[int] = None,
     ) -> None:
-        """Init graph-based clustering model.
-
-        Args:
-            threshold (float): Threshold to make graph edges.
-            metric (Union[str, Callable], optional): The metric to use when calculating distance between instances in a feature array.
-                If metric is a string, it must be one of the options allowed by scipy.spatial.distance.pdist for its metric parameter,
-                or a metric listed in sklearn pairwise.PAIRWISE_DISTANCE_FUNCTIONS. Defaults to "euclidean".
-            n_jobs (Optional[int], optional): The number of jobs to use for the computation. Defaults to None.
-        """
-
         self.threshold = threshold
         self.metric = metric
         self.n_jobs = n_jobs
@@ -336,7 +395,37 @@ class ConnectedComponentsClustering(ClusterMixin, BaseEstimator):
     
 class SpanTreeConnectedComponentsClustering(ClusterMixin, BaseEstimator):
 
-    """Clustering with graph span tree connected components."""
+    """
+    Clustering with graph span tree connected components.
+
+    Parameters
+    ----------
+    n_clusters : int
+        The number of clusters to find. It must be ``None`` if
+        ``distance_threshold`` is not ``None``.
+
+    metric : Union[str, Callable], optional, defaults = "euclidean"
+        The metric to use when calculating distance between instances in a feature array.
+        If metric is a string, it must be one of the options allowed by scipy.spatial.distance.pdist for its metric parameter,
+        or a metric listed in sklearn pairwise.PAIRWISE_DISTANCE_FUNCTIONS.
+
+    n_jobs : Optional[int], optional, defaults = None
+        The number of jobs to use for the computation. Defaults to None.
+
+    Attributes
+    ----------
+    labels_ : ndarray of shape (n_samples)
+        Cluster labels for each point.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from sklearn.cluster import SpanTreeConnectedComponentsClustering
+    >>> X = np.array([[0, 1], [1, 0], [1, 1]])
+    >>> clustering = SpanTreeConnectedComponentsClustering(n_clusters=3, metric="euclidean", n_jobs=-1).fit(X)
+    >>> clustering
+    SpanTreeConnectedComponentsClustering(n_clusters=3, metric="euclidean", n_jobs=-1)
+    """
     
     def __init__(
         self,
