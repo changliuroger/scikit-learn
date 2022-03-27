@@ -35,7 +35,6 @@ def _check_matrix(a: np.ndarray) -> bool:
     ----------
     bool: np.ndarray is a matrix.
     """
-
     return a.ndim == 2
 
 def _check_matrix_is_square(a: np.ndarray) -> bool:
@@ -49,7 +48,6 @@ def _check_matrix_is_square(a: np.ndarray) -> bool:
     ----------
     bool: A matrix is square.
     """
-
     M, N = a.shape
 
     return M == N
@@ -72,7 +70,6 @@ def _check_square_matrix_is_symmetric(a: np.ndarray) -> bool:
     ----------
     bool: A square matrix is symmetric.
     """
-
     return np.allclose(a, a.T)
 
 def check_symmetric(a: np.ndarray) -> bool:
@@ -87,7 +84,6 @@ def check_symmetric(a: np.ndarray) -> bool:
     ----------
     bool: A matrix is symmetric.
     """
-
     if not _check_matrix(a):
         return False
 
@@ -110,7 +106,6 @@ def _check_binary(a: np.ndarray) -> bool:
     ----------
     bool: np.ndarray is binary.
     """
-
     return ((a == 0) | (a == 1)).all()
 
 def check_adjacency_matrix(a: np.ndarray) -> bool:
@@ -125,7 +120,6 @@ def check_adjacency_matrix(a: np.ndarray) -> bool:
     ----------
     bool: A matrix is adjacency_matrix.
     """
-
     if not check_symmetric(a):
         return False
 
@@ -164,7 +158,6 @@ def _pairwise_distances(
     distances: np.ndarray
         The pairwise distance matrix.
     """
-
     assert _check_matrix(X)
 
     distances = pairwise_distances(X=X, metric=metric, n_jobs=n_jobs)
@@ -190,7 +183,6 @@ def distances_to_adjacency_matrix(
     adjacency_matrix : np.ndarray
         The adjacency_matrix.
     """
-
     assert check_symmetric(distances)
 
     N = distances.shape[0]
@@ -218,7 +210,6 @@ def span_tree_top_n_weights_idx(
     unravel_idx: Tuple[np.ndarray]
         Indices of top n weights in the span tree.
     """
-
     span_tree_shape = span_tree.shape
     N = span_tree_shape[0]
 
@@ -239,80 +230,13 @@ def span_tree_top_n_weights_idx(
 
     return unravel_idx
 
-# class graphBased(ClusterMixin, BaseEstimator):
-    
-#     """Init graph-based clustering model.
-
-#         Args:
-#             threshold (float): Threshold to make graph edges.
-#             metric (Union[str, Callable], optional): The metric to use when calculating distance between instances in a feature array.
-#                 If metric is a string, it must be one of the options allowed by scipy.spatial.distance.pdist for its metric parameter,
-#                 or a metric listed in sklearn pairwise.PAIRWISE_DISTANCE_FUNCTIONS. Defaults to "euclidean".
-#             n_jobs (Optional[int], optional): The number of jobs to use for the computation. Defaults to None.
-#         """
-#     def __init__(
-#         self,
-#         n_clusters: int,
-#         metric: Union[str, Callable] = "euclidean",
-#         n_jobs: Optional[int] = None,
-#     ) -> None:
-#         self.n_clusters = n_clusters
-#         self.metric = metric
-#         self.n_jobs = n_jobs
-    
-#     def fit(self, X: np.ndarray):
-#         """Fit graph-based clustering model.
-
-#         Args:
-#             X (np.ndarray): A matrix.
-#         """
-
-#         X = self._validate_data(X, accept_sparse="csr")
-
-#         distances = _pairwise_distances(
-#             X=X,
-#             metric=self.metric,
-#             n_jobs=self.n_jobs,
-#         )
-
-#         adjacency_matrix = distances_to_adjacency_matrix(
-#             distances=distances,
-#             threshold=self.threshold,
-#         )
-
-#         graph = csr_matrix(adjacency_matrix)
-
-#         _, labels = connected_components(
-#             csgraph=graph,
-#             directed=True,
-#             return_labels=True,
-#         )
-
-#         self.labels_ = labels
-
-#         return self
-    
-#     def fit_predict(
-#         self,
-#         X: np.ndarray,
-#     ):
-#         """Fit graph-based clustering model and return labels.
-
-#         Args:
-#             X (np.ndarray): A matrix.
-#         """
-
-#         self.fit(X)
-#         return self.labels_
-
 class ConnectedComponentsClustering(ClusterMixin, BaseEstimator):
-
     """
     Clustering with graph connected components.
 
     Parameters
     ----------
-    threshold : float
+    threshold : float, default = 0
         Threshold to make graph edges.
 
     metric : Union[str, Callable], optional, defaults = "euclidean"
@@ -340,19 +264,23 @@ class ConnectedComponentsClustering(ClusterMixin, BaseEstimator):
 
     def __init__(
         self,
-        threshold: float,
-        metric: Union[str, Callable] = "euclidean",
-        n_jobs: Optional[int] = None,
-    ) -> None:
+        threshold = 0,
+        metric = "euclidean",
+        n_jobs = None,
+    ):
         self.threshold = threshold
         self.metric = metric
         self.n_jobs = n_jobs
 
-    def fit(self, X: np.ndarray):
+    def fit(self, X, y=None):
         """Fit graph-based clustering model.
 
-        Args:
-            X (np.ndarray): A matrix.
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples, n_features) or (n_samples, n_samples)
+
+        y : Ignored
+            Not used, present here for API consistency by convention.
         """
 
         X = self._validate_data(X, accept_sparse="csr")
@@ -380,29 +308,32 @@ class ConnectedComponentsClustering(ClusterMixin, BaseEstimator):
 
         return self
 
-    def fit_predict(
-        self,
-        X: np.ndarray,
-    ):
+    def fit_predict(self, X, y=None):
         """Fit graph-based clustering model and return labels.
 
-        Args:
-            X (np.ndarray): A matrix.
-        """
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples, n_features) or (n_samples, n_samples)
 
-        self.fit(X)
+        y : Ignored
+            Not used, present here for API consistency by convention.
+
+        Returns
+        -------
+        labels : ndarray of shape (n_samples,)
+            Cluster labels.
+        """
+        self.fit(X, y)
         return self.labels_
     
 class SpanTreeConnectedComponentsClustering(ClusterMixin, BaseEstimator):
-
     """
     Clustering with graph span tree connected components.
 
     Parameters
     ----------
-    n_clusters : int
-        The number of clusters to find. It must be ``None`` if
-        ``distance_threshold`` is not ``None``.
+    n_clusters : int, defaults = 3
+        The number of clusters to find. 
 
     metric : Union[str, Callable], optional, defaults = "euclidean"
         The metric to use when calculating distance between instances in a feature array.
@@ -429,24 +360,57 @@ class SpanTreeConnectedComponentsClustering(ClusterMixin, BaseEstimator):
     
     def __init__(
         self,
-        n_clusters: int,
-        metric: Union[str, Callable] = "euclidean",
-        n_jobs: Optional[int] = None,
-    ) -> None:
+        n_clusters=3,
+        metric="euclidean",
+        n_jobs= None,
+    ):
         self.n_clusters = n_clusters
         self.metric = metric
         self.n_jobs = n_jobs
     
 
-    def fit(self, X: np.ndarray):
+    def fit(self, X, y=None):
         """Fit graph-based clustering model.
 
-        Args:
-            X (np.ndarray): A matrix.
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, n_features) or \
+                (n_samples, n_samples)
+
+        y : Ignored
+            Not used, present here for API consistency by convention.
+
+        Returns
+        -------
+        self : object
+            Returns the fitted instance.
         """
-
         X = self._validate_data(X, accept_sparse="csr")
+        return self._fit(X)
 
+    def _fit(self, X):
+        """Fit without validation
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples, n_features) or (n_samples, n_samples)
+
+        Returns
+        -------
+        self : object
+            Returns the fitted instance.
+        """
+        if self.n_clusters is not None and self.n_clusters <= 0:
+            raise ValueError(
+                "n_clusters should be an integer greater than 0. %s was provided."
+                % str(self.n_clusters)
+            )
+
+        if self.n_clusters is None:
+            raise ValueError(
+                "n_clusters should not be None for SpanTreeConnectedComponentsClustering."
+            )
+        
         distances = _pairwise_distances(
             X=X,
             metric=self.metric,
@@ -478,15 +442,21 @@ class SpanTreeConnectedComponentsClustering(ClusterMixin, BaseEstimator):
 
         return self
     
-    def fit_predict(
-        self,
-        X: np.ndarray,
-    ):
+    def fit_predict(self, X, y=None):
         """Fit graph-based clustering model and return labels.
 
-        Args:
-            X (np.ndarray): A matrix.
-        """
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features) or \
+                (n_samples, n_samples)
 
-        self.fit(X)
+        y : Ignored
+            Not used, present here for API consistency by convention.
+
+        Returns
+        -------
+        labels : ndarray of shape (n_samples,)
+            Cluster labels.
+        """
+        self.fit(X, y)
         return self.labels_

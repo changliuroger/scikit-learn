@@ -1992,7 +1992,10 @@ def check_clustering(name, clusterer_orig, readonly_memmap=False):
     if name == "AffinityPropagation":
         clusterer.set_params(preference=-100)
         clusterer.set_params(max_iter=100)
-
+    if name == "ConnectedComponentsClustering":
+        clusterer.set_params(threshold=0.275)
+    if name == "SpanTreeConnectedComponentsClustering":
+        clusterer.set_params(n_jobs=-1)
     # fit
     clusterer.fit(X)
     # with lists
