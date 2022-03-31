@@ -10,9 +10,9 @@ def test_connected():
     X, labels_true = make_blobs(n_samples=3000, random_state=170, cluster_std=0.7)
     connected = ConnectedComponentsClustering(threshold = 0.275, metric = "euclidean", n_jobs = -1)
     connected.fit(X)
-    z = rand_score(labels_true = labels_true, labels_pred = connected.fit_predict(X))
+    y = rand_score(labels_true = labels_true, labels_pred = connected.fit_predict(X))
 
-    assert 0.95 < z <= 1.0
+    assert_equal(0.95 < y <= 1.0, True)
 
 def test_span_tree():
     centers = [[1,1], [-1, -1], [1, -1]]
@@ -20,6 +20,6 @@ def test_span_tree():
     X, labels_true = make_blobs(n_samples=3000, random_state=170, cluster_std=0.7)
     span = SpanTreeConnectedComponentsClustering(n_clusters = 3, metric = "euclidean", n_jobs = -1)
     span.fit(X)
-    z = rand_score(labels_true = labels_true, labels_pred = span.fit_predict(X))
+    y = rand_score(labels_true = labels_true, labels_pred = span.fit_predict(X))
 
-    assert 0.95 < z <= 1.0
+    assert_equal(0.95 < y <= 1.0, True)
