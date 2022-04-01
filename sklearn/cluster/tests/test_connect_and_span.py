@@ -1,9 +1,11 @@
 import numpy as np
+from numpy.testing import assert_equal
 from sklearn.cluster import ConnectedComponentsClustering
 from sklearn.cluster import SpanTreeConnectedComponentsClustering
 from sklearn.datasets import make_blobs
 from sklearn.metrics import rand_score
 
+#Issue 21570 testing
 def test_connected():
     centers = [[1,1], [-1, -1], [1, -1]]
 
